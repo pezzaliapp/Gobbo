@@ -14,9 +14,11 @@
 - Schermo sempre acceso durante la lettura
 - Al primo avvio trovi uno **script demo**: tocca "Avvia prompter" e guardalo scorrere
 
-## Uso in videochiamata
-- **Computer**: restringi la finestra del browser e posizionala subito sotto la webcam — lo sguardo resta in camera
-- **Telefono**: split-screen accanto all'app di chiamata, oppure usa un secondo dispositivo appoggiato dietro/accanto alla webcam
+## Uso in videochiamata — leggi prima della call
+- **💻 Computer** (lo scenario più comune): Gobbo in una finestra stretta subito sotto la webcam. ⚠️ Se condividi lo schermo, **condividi la singola finestra, mai lo schermo intero**, o i partecipanti vedranno il gobbo.
+- **🤖 Android**: split-screen — app di chiamata sopra, Gobbo sotto. La camera continua a trasmettere.
+- **🍎 iPhone**: usa **due dispositivi** — chiamata sul computer, Gobbo sul telefono accanto alla webcam. iOS può spegnere la tua camera quando esci dall'app di chiamata: il limite è del sistema operativo e riguarda tutti i teleprompter, quindi il telefono da solo non è affidabile.
+- **🎯 Prova generale**: prima di una call importante, avvia una riunione da solo per 2 minuti e verifica che la tua camera resti accesa con Gobbo aperto.
 - Tastiera (desktop): **Spazio** = play/pausa · **↑ ↓** = velocità · **Esc** = esci
 
 ## Installazione come app

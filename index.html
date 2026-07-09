@@ -72,6 +72,27 @@
   .btn:active{transform:scale(.98)}
   .hint{color:var(--dim);font-size:12.5px;text-align:center;padding-bottom:env(safe-area-inset-bottom)}
 
+  #helpBtn{
+    width:32px;height:32px;border-radius:50%;margin-left:10px;
+    background:var(--panel);border:1px solid var(--line);
+    font-size:15px;font-weight:700;color:var(--dim);
+  }
+  #helpBtn:active{transform:scale(.95);color:var(--tally)}
+  #help{
+    display:none;position:fixed;inset:0;z-index:50;
+    background:rgba(11,14,18,.85);backdrop-filter:blur(6px);
+    align-items:center;justify-content:center;padding:20px;
+  }
+  #help.show{display:flex}
+  #helpCard{
+    max-width:560px;max-height:85dvh;overflow-y:auto;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px;display:flex;flex-direction:column;gap:14px;
+  }
+  #helpCard h2{font-size:16px;letter-spacing:.04em}
+  #helpBody{font-size:14.5px;line-height:1.65;color:var(--text)}
+  #helpBody b{color:var(--tally)}
+  #helpBody p{margin-bottom:12px}
   #toast{
     position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
     background:var(--panel);border:1px solid var(--tally);color:var(--text);
@@ -176,6 +197,7 @@
     <div class="dot"></div>
     <h1>Gobbo</h1>
     <span>teleprompter</span>
+    <button id="helpBtn" title="Come usarlo in videochiamata">?</button>
     <button id="langBtn" title="Cambia lingua / Switch language">EN</button>
   </div>
   <div id="libRow">
@@ -234,6 +256,14 @@
   </div>
 </div>
 
+<div id="help">
+  <div id="helpCard">
+    <h2 id="helpTitle">Come usarlo in videochiamata</h2>
+    <div id="helpBody"></div>
+    <button class="btn primary" id="helpClose">Ho capito</button>
+  </div>
+</div>
+
 <div id="toast"><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
 
 <script>
@@ -262,6 +292,9 @@
       transConsent:"Per tradurre serve un servizio online (MyMemory): il testo verrà inviato a loro.",
       allow:"Consenti",
       transRestored:"Testo originale ripristinato ✓",
+      helpTitle:"Come usarlo in videochiamata",
+      helpOk:"Ho capito",
+      help:"<p><b>💻 Computer (il caso più comune):</b> tieni Gobbo in una finestra stretta subito sotto la webcam. Attenzione: se condividi lo schermo, <b>condividi la singola finestra, mai lo schermo intero</b>, o i partecipanti vedranno il gobbo.</p><p><b>🤖 Android:</b> usa lo split-screen — app di chiamata sopra, Gobbo sotto. La camera continua a trasmettere.</p><p><b>🍎 iPhone:</b> usa <b>due dispositivi</b>: la chiamata sul computer, Gobbo sul telefono appoggiato accanto alla webcam. iOS può spegnere la tua camera se esci dall'app di chiamata, quindi il telefono da solo non è affidabile.</p><p><b>🎯 Prima della call importante:</b> fai una prova di 2 minuti — avvia una riunione da solo, apri Gobbo e verifica che la tua camera resti accesa.</p>",
       demoName:"Demo — benvenuto",
       demo:"Benvenuto in Gobbo, il tuo teleprompter.\n\nTocca lo schermo una volta: il testo parte. Toccalo di nuovo: si ferma. Tutto qui.\n\nI pulsanti + e − sul bordo destro regolano la velocità mentre leggi, senza staccare gli occhi dal testo.\n\nLa linea ambra è il tuo punto di lettura: tienila all'altezza della webcam e lo sguardo resterà in camera.\n\nQuando sei pronto, tocca ⚙, poi Esci, incolla il tuo testo e vai. In bocca al lupo per la tua call."
     },
@@ -285,6 +318,9 @@
       transConsent:"Translation needs an online service (MyMemory): the text will be sent to them.",
       allow:"Allow",
       transRestored:"Original text restored ✓",
+      helpTitle:"How to use it in a video call",
+      helpOk:"Got it",
+      help:"<p><b>💻 Computer (the most common case):</b> keep Gobbo in a narrow window right below your webcam. Warning: if you share your screen, <b>share the single window, never the entire screen</b>, or participants will see the prompter.</p><p><b>🤖 Android:</b> use split-screen — call app on top, Gobbo below. Your camera keeps transmitting.</p><p><b>🍎 iPhone:</b> use <b>two devices</b>: the call on your computer, Gobbo on the phone propped next to the webcam. iOS may turn off your camera when you leave the call app, so a single phone is not reliable.</p><p><b>🎯 Before an important call:</b> do a 2-minute test — start a meeting alone, open Gobbo and check that your camera stays on.</p>",
       demoName:"Demo — welcome",
       demo:"Welcome to Gobbo, your teleprompter.\n\nTap the screen once: the text starts. Tap again: it stops. That's it.\n\nThe + and − buttons on the right edge adjust the speed while you read, without taking your eyes off the text.\n\nThe amber line is your reading point: keep it at webcam height and your gaze stays on camera.\n\nWhen you're ready, tap ⚙, then Exit, paste your own text and go. Good luck with your call."
     }
@@ -330,6 +366,9 @@
     $('exitBtn').textContent=T().exit;
     $('ctlHint').textContent=T().ctlHint;
     $('nameInput').placeholder=T().namePh;
+    $('helpTitle').textContent=T().helpTitle;
+    $('helpBody').innerHTML=T().help;
+    $('helpClose').textContent=T().helpOk;
     $('langBtn').textContent=(lang==='it'?'EN':'IT');
     document.documentElement.lang=lang;
     $('playBtn').textContent=playing?T().pause:T().play;
@@ -510,6 +549,12 @@
     }
     applyLang();
   })();
+
+  $('helpBtn').onclick=()=>$('help').classList.add('show');
+  $('helpClose').onclick=()=>{ $('help').classList.remove('show'); save('gobbo:helpSeen','1'); };
+  $('help').addEventListener('click',e=>{ if(e.target.id==='help') $('helpClose').click(); });
+  // al primo avvio la guida si mostra da sola
+  if(load('gobbo:helpSeen')!=='1') $('help').classList.add('show');
 
   let saveT=null;
   $('script').addEventListener('input',()=>{ snap=null; clearTimeout(saveT); saveT=setTimeout(()=>save('gobbo:text',$('script').value),600); });
