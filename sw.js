@@ -1,5 +1,5 @@
 // Gobbo — Service Worker (cache-first, funzionamento offline)
-const CACHE = 'gobbo-v1';
+const CACHE = 'gobbo-v2';
 const ASSETS = [
   './',
   './index.html',

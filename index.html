@@ -113,6 +113,13 @@
   .chip.on{border-color:var(--tally);color:var(--tally)}
   .chip:active{transform:scale(.97)}
 
+  #gearBtn{
+    position:absolute;top:8px;left:12px;z-index:7;
+    width:40px;height:40px;border-radius:50%;
+    background:rgba(20,25,34,.85);border:1px solid var(--line);
+    font-size:19px;line-height:1;color:var(--dim);
+  }
+  #gearBtn:active{transform:scale(.94);color:var(--tally)}
   @media (min-width:700px){
     #setup{max-width:720px;margin:0 auto}
     #content{padding-left:14vw;padding-right:14vw}
@@ -145,6 +152,7 @@ Suggerimento: frasi brevi e paragrafi separati si leggono meglio."></textarea>
 <div id="stage">
   <div id="progress"></div>
   <div id="status"><span class="led"></span><span id="statusTxt">Pausa</span></div>
+  <button id="gearBtn" title="Mostra/nascondi comandi">⚙</button>
   <div id="scroller"><div id="content"></div></div>
   <div id="eyeline"><span class="arrow"></span><span class="arrow" style="transform:rotate(180deg)"></span></div>
 
@@ -165,7 +173,7 @@ Suggerimento: frasi brevi e paragrafi separati si leggono meglio."></textarea>
       <button class="chip" id="mirrorBtn">⇋ Specchio</button>
       <button class="chip" id="exitBtn">✕ Esci</button>
     </div>
-    <div class="hint" style="padding-bottom:0">Tocca lo schermo per avviare/fermare · doppio tocco per i controlli</div>
+    <div class="hint" style="padding-bottom:0">Tocca lo schermo per avviare/fermare · ⚙ per i comandi</div>
   </div>
 </div>
 
@@ -226,6 +234,7 @@ Suggerimento: frasi brevi e paragrafi separati si leggono meglio."></textarea>
   function stop(){ playing=false; cancelAnimationFrame(raf);
     status.classList.remove('live'); statusTxt.textContent='Pausa';
     $('playBtn').textContent='▶ Avvia';
+    controls.classList.remove('hidden');   // in pausa i comandi tornano visibili
   }
   function toggle(){ playing?stop():play(); }
 
@@ -234,13 +243,8 @@ Suggerimento: frasi brevi e paragrafi separati si leggono meglio."></textarea>
   $('mirrorBtn').onclick=e=>{ e.stopPropagation(); stage.classList.toggle('mirror'); e.target.classList.toggle('on'); };
 
   /* tocco singolo = play/pausa · doppio = controlli */
-  let lastTap=0;
-  scroller.addEventListener('click',()=>{
-    const now=Date.now();
-    if(now-lastTap<320){ controls.classList.toggle('hidden'); stop(); }
-    else toggle();
-    lastTap=now;
-  });
+  scroller.addEventListener('click',()=>toggle());
+  $('gearBtn').addEventListener('click',e=>{ e.stopPropagation(); controls.classList.toggle('hidden'); });
 
   /* tastiera (desktop) */
   document.addEventListener('keydown',e=>{
