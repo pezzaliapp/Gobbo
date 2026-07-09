@@ -1,27 +1,33 @@
-# Gobbo — Teleprompter PWA
+# Gobbo — Teleprompter
 
-Teleprompter per leggere testi durante le videochiamate. Funziona su Android, iOS, Windows e Mac dal browser, installabile come app (PWA) e utilizzabile offline.
+**Poche funzioni, tutte affidabili.** Un teleprompter che si apre in 3 secondi, senza account, senza server: il testo non lascia mai il tuo dispositivo. Funziona su Android, iPhone, Windows e Mac dal browser, installabile come app e utilizzabile offline.
 
-## Funzioni
-- **Scorrimento automatico** con velocità e dimensione testo regolabili
-- **🎙 Modalità Voce**: il testo scorre solo mentre parli e si ferma quando taci
-- **📚 Libreria**: salva più script con nome e ricaricali al volo
-- **🔗 Link di condivisione**: il testo viaggia compresso dentro il link, senza server
-- **◱ Finestra flottante** (Chrome/Edge desktop): mini-prompter sempre in primo piano da trascinare vicino alla webcam
-- **⇋ Modalità specchio**, linea di lettura, schermo sempre acceso
-- **Interfaccia bilingue** italiano/inglese (pulsante IT/EN)
+*Few features, all reliable. A teleprompter that opens in 3 seconds — no account, no server: your text never leaves your device.*
 
-## Uso
-1. Incolla il testo e tocca **Avvia prompter**
-2. Un tocco sullo schermo = avvia/ferma · ⚙ = comandi
-3. Tastiera (desktop): Spazio = play/pausa · frecce ↑↓ = velocità · Esc = esci
+## Cosa fa
+- **Scorrimento fluido** con linea di lettura all'altezza della webcam
+- **Un tocco** = avvia/ferma · **+ e −** sul bordo destro regolano la velocità mentre leggi
+- **Libreria script**: salva più testi con nome, con Annulla dopo l'eliminazione
+- **Esporta/importa** file di testo per spostare gli script tra dispositivi
+- **Modalità specchio** per il vetro da teleprompter fisico
+- **Interfaccia bilingue** IT/EN · schermo sempre acceso durante la lettura
+- Al primo avvio trovi uno **script demo**: tocca "Avvia prompter" e guardalo scorrere
+
+## Uso in videochiamata
+- **Computer**: restringi la finestra del browser e posizionala subito sotto la webcam — lo sguardo resta in camera
+- **Telefono**: split-screen accanto all'app di chiamata, oppure usa un secondo dispositivo appoggiato dietro/accanto alla webcam
+- Tastiera (desktop): **Spazio** = play/pausa · **↑ ↓** = velocità · **Esc** = esci
 
 ## Installazione come app
 - **Android/Chrome**: menu ⋮ → "Aggiungi a schermata Home"
 - **iPhone/Safari**: Condividi → "Aggiungi a Home"
 - **Windows/Mac (Chrome/Edge)**: icona di installazione nella barra degli indirizzi
 
-## Hosting
-Pubblicato con GitHub Pages: https://pezzaliapp.github.io/Gobbo/
+## Laboratorio 🧪
+Le funzioni sperimentali (scorrimento a voce, finestra flottante, link di condivisione, traduzione) vivono in [`lab.html`](./lab.html). Sono utili ma hanno limiti noti — ad esempio la modalità voce può non funzionare su iPhone durante una chiamata attiva, perché iOS riserva il microfono all'app di chiamata. Verranno promosse nella versione principale quando saranno affidabili in condizioni reali.
 
-Testo e preferenze restano salvati sul dispositivo (localStorage). Schermo sempre acceso durante la lettura (Wake Lock API, dove supportata).
+## Privacy
+Nessun account, nessun tracciamento, nessun invio di dati. Testi e preferenze restano in localStorage sul dispositivo.
+
+## Licenza
+[MIT](./LICENSE) — usa, modifica e condividi liberamente.

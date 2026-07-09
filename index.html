@@ -13,13 +13,9 @@
 <title>Gobbo — Teleprompter</title>
 <style>
   :root{
-    --bg:#0B0E12;
-    --panel:#141922;
-    --line:#232B38;
-    --text:#F2EFE8;
-    --dim:#8B94A3;
-    --tally:#FFB547;   /* ambra "tally light" da studio */
-    --live:#E5484D;    /* rosso on-air */
+    --bg:#0B0E12; --panel:#141922; --line:#232B38;
+    --text:#F2EFE8; --dim:#8B94A3;
+    --tally:#FFB547; --live:#E5484D;
     --radius:14px;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -29,9 +25,10 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     overflow:hidden;
   }
-  button,select{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  button,select,input{font:inherit;color:inherit;background:none;border:none}
+  button{cursor:pointer}
 
-  /* ---------- SCHERMATA SCRIPT ---------- */
+  /* ========== SCHERMATA SCRIPT ========== */
   #setup{display:flex;flex-direction:column;height:100dvh;padding:16px;gap:10px}
   .brand{display:flex;align-items:center;gap:10px;padding:4px 2px}
   .dot{width:10px;height:10px;border-radius:50%;background:var(--tally);box-shadow:0 0 12px var(--tally)}
@@ -52,6 +49,13 @@
   }
   .btn.sm{flex:0 0 50px;padding:11px 0;font-size:16px}
 
+  #nameRow{display:none;gap:8px}
+  #nameRow.show{display:flex}
+  #nameInput{
+    flex:1;min-width:0;padding:11px 12px;border-radius:10px;outline:none;
+    background:var(--panel);border:1px solid var(--tally);color:var(--text);font-size:14px;
+  }
+
   #script{
     flex:1;resize:none;width:100%;
     background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
@@ -71,30 +75,25 @@
   #toast{
     position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
     background:var(--panel);border:1px solid var(--tally);color:var(--text);
-    padding:10px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;
-    transition:opacity .25s,transform .25s;z-index:99;max-width:90vw;text-align:center;
+    padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;
+    transition:opacity .25s,transform .25s;z-index:99;max-width:92vw;text-align:center;
+    display:flex;align-items:center;gap:12px;
   }
-  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.show{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+  #toastAct{color:var(--tally);font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:.05em}
 
-  /* ---------- PROMPTER ---------- */
+  /* ========== PROMPTER ========== */
   #stage{display:none;position:fixed;inset:0;background:var(--bg)}
-  #scroller{
-    position:absolute;inset:0;overflow-y:scroll;scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;
-  }
+  #scroller{position:absolute;inset:0;overflow-y:scroll;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   #scroller::-webkit-scrollbar{display:none}
   #content{
-    padding:45dvh 6vw 60dvh;
+    padding:45dvh 15vw 60dvh 6vw;
     font-size:34px;line-height:1.55;font-weight:500;
     letter-spacing:.01em;white-space:pre-wrap;word-wrap:break-word;
   }
   .mirror #content{transform:scaleX(-1)}
 
-  /* Linea di lettura */
-  #eyeline{
-    position:absolute;left:0;right:0;top:38dvh;pointer-events:none;
-    display:flex;align-items:center;
-  }
+  #eyeline{position:absolute;left:0;right:0;top:38dvh;pointer-events:none;display:flex;align-items:center}
   #eyeline::before,#eyeline::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,var(--tally),transparent)}
   #eyeline::after{background:linear-gradient(270deg,var(--tally),transparent)}
   #eyeline .arrow{
@@ -112,8 +111,6 @@
   #status .led{width:8px;height:8px;border-radius:50%;background:var(--dim)}
   #status.live{color:var(--live)}
   #status.live .led{background:var(--live);box-shadow:0 0 10px var(--live);animation:pulse 1.4s infinite}
-  #status.voice{color:var(--tally)}
-  #status.voice .led{background:var(--tally);box-shadow:0 0 10px var(--tally)}
   @keyframes pulse{50%{opacity:.4}}
 
   #gearBtn{
@@ -124,9 +121,27 @@
   }
   #gearBtn:active{transform:scale(.94);color:var(--tally)}
 
+  /* Velocità a portata di pollice: sempre visibile sul bordo destro */
+  #speedPad{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:7;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+  }
+  .spd{
+    width:52px;height:52px;border-radius:50%;
+    background:rgba(20,25,34,.8);border:1px solid var(--line);
+    font-size:26px;line-height:1;color:var(--text);font-weight:600;
+    backdrop-filter:blur(6px);
+  }
+  .spd:active{transform:scale(.92);border-color:var(--tally);color:var(--tally)}
+  #speedVal{
+    font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;
+    opacity:0;transition:opacity .3s;
+  }
+  #speedVal.show{opacity:1;color:var(--tally)}
+
   /* Pannello controlli */
   #controls{
-    position:absolute;left:0;right:0;bottom:0;z-index:6;
+    position:absolute;left:0;right:0;bottom:0;z-index:8;
     background:rgba(20,25,34,.94);backdrop-filter:blur(12px);
     border-top:1px solid var(--line);
     padding:14px 16px calc(14px + env(safe-area-inset-bottom));
@@ -148,11 +163,9 @@
 
   @media (min-width:700px){
     #setup{max-width:720px;margin:0 auto}
-    #content{padding-left:14vw;padding-right:14vw}
+    #content{padding-left:14vw;padding-right:16vw}
   }
-  @media (prefers-reduced-motion:reduce){
-    #status.live .led{animation:none}
-  }
+  @media (prefers-reduced-motion:reduce){#status.live .led{animation:none}}
 </style>
 </head>
 <body>
@@ -167,9 +180,16 @@
   </div>
   <div id="libRow">
     <select id="libSel"></select>
-    <button class="btn sm" id="saveScriptBtn" title="Salva script">💾</button>
-    <button class="btn sm" id="delScriptBtn" title="Elimina script">🗑</button>
-    <button class="btn sm" id="linkBtn" title="Copia link di condivisione">🔗</button>
+    <button class="btn sm" id="saveScriptBtn" title="Salva">💾</button>
+    <button class="btn sm" id="delScriptBtn" title="Elimina">🗑</button>
+    <button class="btn sm" id="exportBtn" title="Esporta file">⤓</button>
+    <button class="btn sm" id="importBtn" title="Importa file">⤒</button>
+    <input type="file" id="fileInput" accept=".txt,text/plain" hidden>
+  </div>
+  <div id="nameRow">
+    <input id="nameInput" maxlength="40">
+    <button class="btn sm" id="nameOk">✓</button>
+    <button class="btn sm" id="nameCancel">✕</button>
   </div>
   <textarea id="script"></textarea>
   <div class="row">
@@ -183,9 +203,15 @@
 <div id="stage">
   <div id="progress"></div>
   <div id="status"><span class="led"></span><span id="statusTxt">Pausa</span></div>
-  <button id="gearBtn" title="Mostra/nascondi comandi">⚙</button>
+  <button id="gearBtn" title="Comandi">⚙</button>
   <div id="scroller"><div id="content"></div></div>
   <div id="eyeline"><span class="arrow"></span><span class="arrow" style="transform:rotate(180deg)"></span></div>
+
+  <div id="speedPad">
+    <button class="spd" id="spdUp">+</button>
+    <span id="speedVal">60</span>
+    <button class="spd" id="spdDown">−</button>
+  </div>
 
   <div id="controls">
     <div class="ctl">
@@ -202,17 +228,13 @@
       <button class="chip" id="playBtn">▶ Avvia</button>
       <button class="chip" id="restartBtn">⟲ Da capo</button>
       <button class="chip" id="mirrorBtn">⇋ Specchio</button>
-    </div>
-    <div class="ctlrow">
-      <button class="chip" id="voiceBtn">🎙 Voce</button>
-      <button class="chip" id="pipBtn">◱ Finestra</button>
       <button class="chip" id="exitBtn">✕ Esci</button>
     </div>
-    <div class="hint" style="padding-bottom:0" id="ctlHint">Tocca lo schermo per avviare/fermare · ⚙ per i comandi</div>
+    <div class="hint" style="padding-bottom:0" id="ctlHint">Tocca lo schermo per avviare/fermare · + e − per la velocità · ⚙ per i comandi</div>
   </div>
 </div>
 
-<div id="toast"></div>
+<div id="toast"><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
 
 <script>
 (function(){
@@ -221,44 +243,38 @@
   /* ==================== LINGUE ==================== */
   const I18N = {
     it: {
-      placeholder: "Incolla o scrivi qui il testo da leggere durante la videochiamata…\n\nSuggerimento: frasi brevi e paragrafi separati si leggono meglio.",
+      placeholder:"Incolla o scrivi qui il testo da leggere durante la videochiamata…",
       clear:"Svuota", start:"Avvia prompter ▸",
       saveHint:"Il testo viene salvato automaticamente su questo dispositivo.",
       speed:"Velocità", size:"Testo",
       play:"▶ Avvia", pause:"⏸ Pausa", restart:"⟲ Da capo", mirror:"⇋ Specchio", exit:"✕ Esci",
-      voice:"🎙 Voce", pip:"◱ Finestra",
-      paused:"Pausa", reading:"In lettura", voiceOn:"Voce attiva",
-      ctlHint:"Tocca lo schermo per avviare/fermare · ⚙ per i comandi",
+      paused:"Pausa", reading:"In lettura",
+      ctlHint:"Tocca lo schermo per avviare/fermare · + e − per la velocità · ⚙ per i comandi",
       empty:"Nessun testo. Torna indietro e incolla il tuo script.",
       newScript:"— nuovo script —",
-      namePrompt:"Nome dello script:",
-      confirmDel:"Eliminare questo script?",
-      saved:"Script salvato ✓",
-      linkCopied:"Link copiato! Aprilo su un altro dispositivo.",
-      linkPrompt:"Copia questo link:",
-      micDenied:"Microfono non disponibile o permesso negato.",
-      pipUnsupported:"Finestra flottante non supportata: usa Chrome o Edge su computer.",
-      loadedFromLink:"Script caricato dal link ✓"
+      namePh:"Nome dello script…",
+      saved:"Script salvato ✓", updated:"Script aggiornato ✓",
+      deleted:"Script eliminato", undo:"Annulla", restored:"Ripristinato ✓",
+      imported:"File importato ✓", importFail:"Impossibile leggere il file.",
+      demoName:"Demo — benvenuto",
+      demo:"Benvenuto in Gobbo, il tuo teleprompter.\n\nTocca lo schermo una volta: il testo parte. Toccalo di nuovo: si ferma. Tutto qui.\n\nI pulsanti + e − sul bordo destro regolano la velocità mentre leggi, senza staccare gli occhi dal testo.\n\nLa linea ambra è il tuo punto di lettura: tienila all'altezza della webcam e lo sguardo resterà in camera.\n\nQuando sei pronto, tocca ⚙, poi Esci, incolla il tuo testo e vai. In bocca al lupo per la tua call."
     },
     en: {
-      placeholder: "Paste or type here the text to read during your video call…\n\nTip: short sentences and separate paragraphs are easier to read.",
+      placeholder:"Paste or type here the text to read during your video call…",
       clear:"Clear", start:"Start prompter ▸",
       saveHint:"Your text is saved automatically on this device.",
       speed:"Speed", size:"Text size",
       play:"▶ Play", pause:"⏸ Pause", restart:"⟲ Restart", mirror:"⇋ Mirror", exit:"✕ Exit",
-      voice:"🎙 Voice", pip:"◱ Window",
-      paused:"Paused", reading:"Reading", voiceOn:"Voice on",
-      ctlHint:"Tap the screen to start/stop · ⚙ for controls",
+      paused:"Paused", reading:"Reading",
+      ctlHint:"Tap the screen to start/stop · + and − for speed · ⚙ for controls",
       empty:"No text. Go back and paste your script.",
       newScript:"— new script —",
-      namePrompt:"Script name:",
-      confirmDel:"Delete this script?",
-      saved:"Script saved ✓",
-      linkCopied:"Link copied! Open it on another device.",
-      linkPrompt:"Copy this link:",
-      micDenied:"Microphone unavailable or permission denied.",
-      pipUnsupported:"Floating window not supported: use Chrome or Edge on desktop.",
-      loadedFromLink:"Script loaded from link ✓"
+      namePh:"Script name…",
+      saved:"Script saved ✓", updated:"Script updated ✓",
+      deleted:"Script deleted", undo:"Undo", restored:"Restored ✓",
+      imported:"File imported ✓", importFail:"Could not read the file.",
+      demoName:"Demo — welcome",
+      demo:"Welcome to Gobbo, your teleprompter.\n\nTap the screen once: the text starts. Tap again: it stops. That's it.\n\nThe + and − buttons on the right edge adjust the speed while you read, without taking your eyes off the text.\n\nThe amber line is your reading point: keep it at webcam height and your gaze stays on camera.\n\nWhen you're ready, tap ⚙, then Exit, paste your own text and go. Good luck with your call."
     }
   };
   let lang='it';
@@ -270,44 +286,51 @@
 
   let playing=false, raf=null, last=0, acc=0, wakeLock=null;
   let speed=60, fontSize=34;
-  let voiceMode=false, mic=null, analyser=null, micData=null, lastVoice=0;
-  let lib={}, currentId='';
-
-  function applyLang(){
-    $('script').placeholder = T().placeholder;
-    $('clearBtn').textContent = T().clear;
-    $('startBtn').textContent = T().start;
-    $('saveHint').textContent = T().saveHint;
-    $('lblSpeed').textContent = T().speed;
-    $('lblSize').textContent = T().size;
-    $('restartBtn').textContent = T().restart;
-    $('mirrorBtn').textContent = T().mirror;
-    $('exitBtn').textContent = T().exit;
-    $('voiceBtn').textContent = T().voice;
-    $('pipBtn').textContent = T().pip;
-    $('ctlHint').textContent = T().ctlHint;
-    $('langBtn').textContent = (lang==='it'?'EN':'IT');
-    document.documentElement.lang = lang;
-    $('playBtn').textContent = playing ? T().pause : T().play;
-    statusTxt.textContent = playing ? (voiceMode?T().voiceOn:T().reading) : T().paused;
-    refreshLib();
-  }
-  $('langBtn').onclick = ()=>{ lang=(lang==='it'?'en':'it'); applyLang(); save('gobbo:lang',lang); };
+  let lib={}, currentId='', trash=null;
 
   /* ==================== PERSISTENZA ==================== */
-  async function save(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-  async function load(k){ try{ return localStorage.getItem(k); }catch(e){} return null; }
+  function save(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function load(k){ try{ return localStorage.getItem(k); }catch(e){} return null; }
 
-  function toast(msg){
-    const t=$('toast'); t.textContent=msg; t.classList.add('show');
-    clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2600);
+  /* ==================== TOAST (con azione opzionale) ==================== */
+  const toastEl=$('toast'), toastMsg=$('toastMsg'), toastAct=$('toastAct');
+  let toastCb=null;
+  function toast(msg, actionLabel, cb){
+    toastMsg.textContent=msg;
+    if(actionLabel){ toastAct.textContent=actionLabel; toastAct.hidden=false; toastCb=cb; }
+    else { toastAct.hidden=true; toastCb=null; }
+    toastEl.classList.add('show');
+    clearTimeout(toastEl._t);
+    toastEl._t=setTimeout(()=>{ toastEl.classList.remove('show'); toastCb=null; }, actionLabel?5000:2400);
   }
+  toastAct.onclick=()=>{ if(toastCb) toastCb(); toastEl.classList.remove('show'); toastCb=null; };
 
-  /* ==================== LIBRERIA SCRIPT ==================== */
+  /* ==================== LINGUA ==================== */
+  function applyLang(){
+    $('script').placeholder=T().placeholder;
+    $('clearBtn').textContent=T().clear;
+    $('startBtn').textContent=T().start;
+    $('saveHint').textContent=T().saveHint;
+    $('lblSpeed').textContent=T().speed;
+    $('lblSize').textContent=T().size;
+    $('restartBtn').textContent=T().restart;
+    $('mirrorBtn').textContent=T().mirror;
+    $('exitBtn').textContent=T().exit;
+    $('ctlHint').textContent=T().ctlHint;
+    $('nameInput').placeholder=T().namePh;
+    $('langBtn').textContent=(lang==='it'?'EN':'IT');
+    document.documentElement.lang=lang;
+    $('playBtn').textContent=playing?T().pause:T().play;
+    statusTxt.textContent=playing?T().reading:T().paused;
+    refreshLib();
+  }
+  $('langBtn').onclick=()=>{ lang=(lang==='it'?'en':'it'); applyLang(); save('gobbo:lang',lang); };
+
+  /* ==================== LIBRERIA ==================== */
   function refreshLib(){
     const sel=$('libSel'); sel.innerHTML='';
-    const opt=document.createElement('option');
-    opt.value=''; opt.textContent=T().newScript; sel.appendChild(opt);
+    const o0=document.createElement('option');
+    o0.value=''; o0.textContent=T().newScript; sel.appendChild(o0);
     Object.entries(lib)
       .sort((a,b)=>(b[1].updated||0)-(a[1].updated||0))
       .forEach(([id,s])=>{
@@ -316,95 +339,91 @@
       });
     sel.value = lib[currentId] ? currentId : '';
   }
-  function persistLib(){ save('gobbo:lib', JSON.stringify(lib)); save('gobbo:current', currentId); }
+  function persistLib(){ save('gobbo:lib',JSON.stringify(lib)); save('gobbo:current',currentId); }
 
-  $('libSel').addEventListener('change', e=>{
+  $('libSel').addEventListener('change',e=>{
     currentId=e.target.value;
-    if(currentId && lib[currentId]) $('script').value=lib[currentId].text;
-    else $('script').value='';
-    save('gobbo:text', $('script').value);
+    $('script').value = (currentId && lib[currentId]) ? lib[currentId].text : '';
+    save('gobbo:text',$('script').value);
     persistLib();
   });
 
-  $('saveScriptBtn').onclick = ()=>{
+  function showNameRow(){ $('nameRow').classList.add('show'); $('nameInput').value=''; $('nameInput').focus(); }
+  function hideNameRow(){ $('nameRow').classList.remove('show'); }
+
+  $('saveScriptBtn').onclick=()=>{
     const txt=$('script').value; if(!txt.trim()) return;
     if(currentId && lib[currentId]){
       lib[currentId].text=txt; lib[currentId].updated=Date.now();
-    } else {
-      const name=(window.prompt(T().namePrompt)||'').trim(); if(!name) return;
-      currentId='s'+Date.now();
-      lib[currentId]={name, text:txt, updated:Date.now()};
-    }
-    persistLib(); refreshLib(); toast(T().saved);
+      persistLib(); refreshLib(); toast(T().updated);
+    } else showNameRow();
   };
+  $('nameOk').onclick=()=>{
+    const name=$('nameInput').value.trim(); if(!name) { $('nameInput').focus(); return; }
+    currentId='s'+Date.now();
+    lib[currentId]={name, text:$('script').value, updated:Date.now()};
+    persistLib(); refreshLib(); hideNameRow(); toast(T().saved);
+  };
+  $('nameCancel').onclick=hideNameRow;
+  $('nameInput').addEventListener('keydown',e=>{
+    if(e.key==='Enter') $('nameOk').click();
+    if(e.key==='Escape') hideNameRow();
+  });
 
-  $('delScriptBtn').onclick = ()=>{
+  $('delScriptBtn').onclick=()=>{
     if(!currentId || !lib[currentId]) return;
-    if(!window.confirm(T().confirmDel)) return;
+    trash={id:currentId, data:lib[currentId]};
     delete lib[currentId]; currentId='';
     persistLib(); refreshLib();
+    toast(T().deleted, T().undo, ()=>{
+      if(!trash) return;
+      lib[trash.id]=trash.data; currentId=trash.id; trash=null;
+      persistLib(); refreshLib();
+      $('script').value=lib[currentId].text; save('gobbo:text',$('script').value);
+      toast(T().restored);
+    });
   };
 
-  /* ==================== LINK DI CONDIVISIONE ==================== */
-  function b64url(buf){
-    let s=''; const b=new Uint8Array(buf);
-    for(let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));
-    return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-  }
-  function b64urlDec(s){
-    s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='=';
-    const bin=atob(s), b=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) b[i]=bin.charCodeAt(i);
-    return b;
-  }
-  $('linkBtn').onclick = async ()=>{
+  /* ==================== ESPORTA / IMPORTA ==================== */
+  $('exportBtn').onclick=()=>{
     const txt=$('script').value; if(!txt.trim()) return;
-    let data;
-    try{
-      const cs=new CompressionStream('deflate-raw');
-      const buf=await new Response(new Blob([txt]).stream().pipeThrough(cs)).arrayBuffer();
-      data='z'+b64url(buf);
-    }catch(e){
-      data='p'+b64url(new TextEncoder().encode(txt));
-    }
-    const url=location.origin+location.pathname+'#s='+data;
-    try{
-      if(navigator.share){ await navigator.share({title:'Gobbo', url}); return; }
-      await navigator.clipboard.writeText(url);
-      toast(T().linkCopied);
-    }catch(e){
-      window.prompt(T().linkPrompt, url);
-    }
+    const name=(currentId && lib[currentId]) ? lib[currentId].name : 'gobbo-script';
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'}));
+    a.download=name.replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-')+'.txt';
+    a.click(); URL.revokeObjectURL(a.href);
   };
-  async function loadFromHash(){
-    const m=location.hash.match(/#s=([zp])([A-Za-z0-9\-_]+)/);
-    if(!m) return false;
-    try{
-      const b=b64urlDec(m[2]);
-      let txt;
-      if(m[1]==='z'){
-        const ds=new DecompressionStream('deflate-raw');
-        txt=await new Response(new Blob([b]).stream().pipeThrough(ds)).text();
-      } else txt=new TextDecoder().decode(b);
-      $('script').value=txt; save('gobbo:text',txt);
-      history.replaceState(null,'',location.pathname);
-      toast(T().loadedFromLink);
-      return true;
-    }catch(e){ return false; }
-  }
+  $('importBtn').onclick=()=>$('fileInput').click();
+  $('fileInput').addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{ $('script').value=r.result; save('gobbo:text',r.result);
+      currentId=''; refreshLib(); toast(T().imported); };
+    r.onerror=()=>toast(T().importFail);
+    r.readAsText(f);
+    e.target.value='';
+  });
 
-  /* ==================== AVVIO ==================== */
-  (async ()=>{
-    const l=await load('gobbo:lang'); if(l==='en'||l==='it') lang=l;
-    const s=await load('gobbo:prefs');
-    if(s){ try{ const p=JSON.parse(s); speed=p.speed||60; fontSize=p.fs||34;
-      $('speed').value=speed; $('fsize').value=fontSize;
-      $('speedOut').value=speed; $('fsizeOut').value=fontSize; }catch(e){} }
-    const lb=await load('gobbo:lib'); if(lb){ try{ lib=JSON.parse(lb)||{}; }catch(e){} }
-    currentId=(await load('gobbo:current'))||'';
+  /* ==================== AVVIO APP ==================== */
+  (function init(){
+    const l=load('gobbo:lang'); if(l==='en'||l==='it') lang=l;
+    const p=load('gobbo:prefs');
+    if(p){ try{ const o=JSON.parse(p); speed=o.speed||60; fontSize=o.fs||34; }catch(e){} }
+    $('speed').value=speed; $('speedOut').value=speed;
+    $('fsize').value=fontSize; $('fsizeOut').value=fontSize;
+    const lb=load('gobbo:lib'); if(lb){ try{ lib=JSON.parse(lb)||{}; }catch(e){} }
+    currentId=load('gobbo:current')||'';
+
+    // Primo avvio: precarica lo script demo
+    if(load('gobbo:seen')!=='1' && Object.keys(lib).length===0 && !load('gobbo:text')){
+      const id='s'+Date.now();
+      lib[id]={name:T().demoName, text:T().demo, updated:Date.now()};
+      currentId=id; $('script').value=T().demo;
+      save('gobbo:text',T().demo); persistLib(); save('gobbo:seen','1');
+    } else {
+      const t=load('gobbo:text'); if(t) $('script').value=t;
+    }
     applyLang();
-    const fromLink=await loadFromHash();
-    if(!fromLink){ const t=await load('gobbo:text'); if(t) $('script').value=t; }
   })();
 
   let saveT=null;
@@ -419,43 +438,28 @@
     scroller.scrollTop=0; updateProgress();
     requestWake();
   };
-  $('exitBtn').onclick=e=>{ e.stopPropagation(); stop(); voiceOff();
+  $('exitBtn').onclick=e=>{ e.stopPropagation(); stop();
     stage.style.display='none'; setup.style.display='flex'; releaseWake(); };
 
-  /* ==================== MOTORE DI SCORRIMENTO ==================== */
-  function speaking(){
-    if(!analyser) return true;
-    analyser.getByteTimeDomainData(micData);
-    let sum=0;
-    for(let i=0;i<micData.length;i++){ const d=(micData[i]-128)/128; sum+=d*d; }
-    const rms=Math.sqrt(sum/micData.length);
-    const now=performance.now();
-    if(rms>0.028) lastVoice=now;          // soglia voce
-    return (now-lastVoice)<800;           // continua per 0,8 s dopo l'ultima parola
-  }
+  /* ==================== MOTORE ==================== */
   function step(ts){
     if(!playing) return;
     if(!last) last=ts;
     const dt=(ts-last)/1000; last=ts;
-    const go = voiceMode ? speaking() : true;
-    if(go){
-      acc += speed*dt;
-      if(acc>=1){ const px=Math.floor(acc); acc-=px; scroller.scrollTop+=px; }
-    }
-    if(voiceMode) status.classList.toggle('voice', go);
+    acc+=speed*dt;
+    if(acc>=1){ const px=Math.floor(acc); acc-=px; scroller.scrollTop+=px; }
     updateProgress();
-    if(scroller.scrollTop >= scroller.scrollHeight - scroller.clientHeight - 2){ stop(); }
+    if(scroller.scrollTop>=scroller.scrollHeight-scroller.clientHeight-2){ stop(); }
     else raf=requestAnimationFrame(step);
   }
   function play(){ if(playing)return; playing=true; last=0;
-    status.classList.add('live'); statusTxt.textContent=voiceMode?T().voiceOn:T().reading;
+    status.classList.add('live'); statusTxt.textContent=T().reading;
     $('playBtn').textContent=T().pause;
     controls.classList.add('hidden');
     raf=requestAnimationFrame(step);
   }
   function stop(){ playing=false; cancelAnimationFrame(raf);
-    status.classList.remove('live'); status.classList.remove('voice');
-    statusTxt.textContent=T().paused;
+    status.classList.remove('live'); statusTxt.textContent=T().paused;
     $('playBtn').textContent=T().play;
     controls.classList.remove('hidden');
   }
@@ -464,70 +468,46 @@
   $('playBtn').onclick=e=>{ e.stopPropagation(); toggle(); };
   $('restartBtn').onclick=e=>{ e.stopPropagation(); scroller.scrollTop=0; updateProgress(); };
   $('mirrorBtn').onclick=e=>{ e.stopPropagation(); stage.classList.toggle('mirror'); e.target.classList.toggle('on'); };
-
   scroller.addEventListener('click',()=>toggle());
   $('gearBtn').addEventListener('click',e=>{ e.stopPropagation(); controls.classList.toggle('hidden'); });
 
-  /* ==================== MODALITÀ VOCE ==================== */
-  async function voiceOn(){
-    try{
-      mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
-      const ctx=new (window.AudioContext||window.webkitAudioContext)();
-      const src=ctx.createMediaStreamSource(mic);
-      analyser=ctx.createAnalyser(); analyser.fftSize=512;
-      micData=new Uint8Array(analyser.fftSize);
-      src.connect(analyser);
-      voiceMode=true; lastVoice=0;
-      $('voiceBtn').classList.add('on');
-      if(playing) statusTxt.textContent=T().voiceOn;
-    }catch(e){ toast(T().micDenied); }
+  /* ==================== VELOCITÀ A PORTATA DI POLLICE ==================== */
+  const speedVal=$('speedVal');
+  let valT=null;
+  function bumpSpeed(d){
+    speed=Math.max(10,Math.min(200,speed+d));
+    $('speed').value=speed; $('speedOut').value=speed;
+    speedVal.textContent=speed; speedVal.classList.add('show');
+    clearTimeout(valT); valT=setTimeout(()=>speedVal.classList.remove('show'),1200);
+    savePrefs();
   }
-  function voiceOff(){
-    voiceMode=false; analyser=null;
-    if(mic){ mic.getTracks().forEach(t=>t.stop()); mic=null; }
-    $('voiceBtn').classList.remove('on');
-    status.classList.remove('voice');
-    if(playing) statusTxt.textContent=T().reading;
-  }
-  $('voiceBtn').onclick=e=>{ e.stopPropagation(); voiceMode?voiceOff():voiceOn(); };
-
-  /* ==================== FINESTRA FLOTTANTE (PiP) ==================== */
-  $('pipBtn').onclick=async e=>{
-    e.stopPropagation();
-    if(!('documentPictureInPicture' in window)){ toast(T().pipUnsupported); return; }
-    try{
-      const pip=await documentPictureInPicture.requestWindow({width:460,height:380});
-      [...document.styleSheets].forEach(ss=>{
-        try{
-          const st=document.createElement('style');
-          st.textContent=[...ss.cssRules].map(r=>r.cssText).join('');
-          pip.document.head.appendChild(st);
-        }catch(err){}
-      });
-      pip.document.body.style.background='#0B0E12';
-      pip.document.body.appendChild(stage);
-      pip.addEventListener('pagehide',()=>{
-        document.body.appendChild(stage);
-      });
-    }catch(err){ toast(T().pipUnsupported); }
-  };
+  // tocco singolo: ±5 · pressione prolungata: ripete
+  [['spdUp',5],['spdDown',-5]].forEach(([id,d])=>{
+    const b=$(id); let rep=null, held=false;
+    const start=e=>{ e.stopPropagation(); e.preventDefault(); held=false;
+      rep=setInterval(()=>{ held=true; bumpSpeed(d); },140); };
+    const end=e=>{ e.stopPropagation(); clearInterval(rep);
+      if(!held) bumpSpeed(d); held=false; };
+    b.addEventListener('pointerdown',start);
+    b.addEventListener('pointerup',end);
+    b.addEventListener('pointercancel',()=>clearInterval(rep));
+    b.addEventListener('click',e=>e.stopPropagation());
+  });
 
   /* ==================== TASTIERA ==================== */
   document.addEventListener('keydown',e=>{
     if(stage.style.display!=='block') return;
     if(e.code==='Space'){ e.preventDefault(); toggle(); }
-    if(e.key==='ArrowUp'){ speed=Math.min(200,speed+10); syncSpeed(); }
-    if(e.key==='ArrowDown'){ speed=Math.max(10,speed-10); syncSpeed(); }
+    if(e.key==='ArrowUp'){ e.preventDefault(); bumpSpeed(10); }
+    if(e.key==='ArrowDown'){ e.preventDefault(); bumpSpeed(-10); }
     if(e.key==='Escape'){ $('exitBtn').click(); }
   });
 
   /* ==================== SLIDER ==================== */
   function savePrefs(){ save('gobbo:prefs',JSON.stringify({speed,fs:fontSize})); }
-  function syncSpeed(){ $('speed').value=speed; $('speedOut').value=speed; savePrefs(); }
   $('speed').addEventListener('input',e=>{ speed=+e.target.value; $('speedOut').value=speed; savePrefs(); });
   $('fsize').addEventListener('input',e=>{ fontSize=+e.target.value; $('fsizeOut').value=fontSize;
     content.style.fontSize=fontSize+'px'; savePrefs(); });
-
   ['pointerdown','click'].forEach(ev=>controls.addEventListener(ev,e=>e.stopPropagation()));
 
   /* ==================== PROGRESSO ==================== */
