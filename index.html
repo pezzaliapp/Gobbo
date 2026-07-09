@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0B0E12">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gobbo">
+<title>Gobbo — Teleprompter</title>
+<style>
+  :root{
+    --bg:#0B0E12;
+    --panel:#141922;
+    --line:#232B38;
+    --text:#F2EFE8;
+    --dim:#8B94A3;
+    --tally:#FFB547;   /* ambra "tally light" da studio */
+    --live:#E5484D;    /* rosso on-air */
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    overflow:hidden;
+  }
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+
+  /* ---------- SCHERMATA SCRIPT ---------- */
+  #setup{display:flex;flex-direction:column;height:100dvh;padding:16px;gap:12px}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 2px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--tally);box-shadow:0 0 12px var(--tally)}
+  .brand h1{font-size:17px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .brand span{color:var(--dim);font-size:12px;margin-left:auto}
+  #script{
+    flex:1;resize:none;width:100%;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    color:var(--text);padding:16px;font-size:16px;line-height:1.6;outline:none;
+  }
+  #script:focus{border-color:var(--tally)}
+  .row{display:flex;gap:10px}
+  .btn{
+    flex:1;padding:14px;border-radius:var(--radius);
+    background:var(--panel);border:1px solid var(--line);
+    font-weight:600;font-size:15px;text-align:center;
+  }
+  .btn.primary{background:var(--tally);color:#151006;border-color:var(--tally)}
+  .btn:active{transform:scale(.98)}
+  .hint{color:var(--dim);font-size:12.5px;text-align:center;padding-bottom:env(safe-area-inset-bottom)}
+
+  /* ---------- PROMPTER ---------- */
+  #stage{display:none;position:fixed;inset:0;background:var(--bg)}
+  #scroller{
+    position:absolute;inset:0;overflow-y:scroll;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  #scroller::-webkit-scrollbar{display:none}
+  #content{
+    padding:45dvh 6vw 60dvh;
+    font-size:34px;line-height:1.55;font-weight:500;
+    letter-spacing:.01em;white-space:pre-wrap;word-wrap:break-word;
+  }
+  .mirror #content{transform:scaleX(-1)}
+
+  /* Linea di lettura: la firma del gobbo vero */
+  #eyeline{
+    position:absolute;left:0;right:0;top:38dvh;pointer-events:none;
+    display:flex;align-items:center;
+  }
+  #eyeline::before,#eyeline::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,var(--tally),transparent)}
+  #eyeline::after{background:linear-gradient(270deg,var(--tally),transparent)}
+  #eyeline .arrow{
+    width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;
+    border-left:11px solid var(--tally);margin:0 4px;filter:drop-shadow(0 0 6px rgba(255,181,71,.6));
+  }
+
+  #progress{position:absolute;top:0;left:0;height:3px;background:var(--tally);width:0%;transition:width .2s linear;z-index:5}
+
+  #status{
+    position:absolute;top:12px;right:14px;z-index:5;
+    display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.12em;
+    color:var(--dim);text-transform:uppercase;transition:opacity .3s;
+  }
+  #status .led{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+  #status.live{color:var(--live)}
+  #status.live .led{background:var(--live);box-shadow:0 0 10px var(--live);animation:pulse 1.4s infinite}
+  @keyframes pulse{50%{opacity:.4}}
+
+  /* Pannello controlli */
+  #controls{
+    position:absolute;left:0;right:0;bottom:0;z-index:6;
+    background:rgba(20,25,34,.94);backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;gap:12px;
+    transition:transform .25s ease;
+  }
+  #controls.hidden{transform:translateY(110%)}
+  .ctl{display:flex;align-items:center;gap:12px}
+  .ctl label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);width:74px;flex-shrink:0}
+  input[type=range]{flex:1;accent-color:var(--tally);height:28px}
+  .ctl output{width:44px;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:var(--dim)}
+  .ctlrow{display:flex;gap:8px}
+  .chip{
+    flex:1;padding:11px 8px;border-radius:10px;background:var(--bg);
+    border:1px solid var(--line);font-size:13.5px;font-weight:600;text-align:center;
+  }
+  .chip.on{border-color:var(--tally);color:var(--tally)}
+  .chip:active{transform:scale(.97)}
+
+  @media (min-width:700px){
+    #setup{max-width:720px;margin:0 auto}
+    #content{padding-left:14vw;padding-right:14vw}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #status.live .led{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- SCHERMATA 1: SCRIPT -->
+<div id="setup">
+  <div class="brand">
+    <div class="dot"></div>
+    <h1>Gobbo</h1>
+    <span>teleprompter</span>
+  </div>
+  <textarea id="script" placeholder="Incolla o scrivi qui il testo da leggere durante la videochiamata…
+
+Suggerimento: frasi brevi e paragrafi separati si leggono meglio."></textarea>
+  <div class="row">
+    <button class="btn" id="clearBtn">Svuota</button>
+    <button class="btn primary" id="startBtn">Avvia prompter ▸</button>
+  </div>
+  <div class="hint">Il testo viene salvato automaticamente su questo dispositivo.</div>
+</div>
+
+<!-- SCHERMATA 2: PROMPTER -->
+<div id="stage">
+  <div id="progress"></div>
+  <div id="status"><span class="led"></span><span id="statusTxt">Pausa</span></div>
+  <div id="scroller"><div id="content"></div></div>
+  <div id="eyeline"><span class="arrow"></span><span class="arrow" style="transform:rotate(180deg)"></span></div>
+
+  <div id="controls">
+    <div class="ctl">
+      <label>Velocità</label>
+      <input type="range" id="speed" min="10" max="200" value="60">
+      <output id="speedOut">60</output>
+    </div>
+    <div class="ctl">
+      <label>Testo</label>
+      <input type="range" id="fsize" min="20" max="72" value="34">
+      <output id="fsizeOut">34</output>
+    </div>
+    <div class="ctlrow">
+      <button class="chip" id="playBtn">▶ Avvia</button>
+      <button class="chip" id="restartBtn">⟲ Da capo</button>
+      <button class="chip" id="mirrorBtn">⇋ Specchio</button>
+      <button class="chip" id="exitBtn">✕ Esci</button>
+    </div>
+    <div class="hint" style="padding-bottom:0">Tocca lo schermo per avviare/fermare · doppio tocco per i controlli</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const setup=$('setup'), stage=$('stage'), scroller=$('scroller'),
+        content=$('content'), controls=$('controls'), progress=$('progress'),
+        status=$('status'), statusTxt=$('statusTxt');
+
+  let playing=false, raf=null, last=0, acc=0, wakeLock=null;
+  let speed=60, fontSize=34;
+
+  /* ---------- persistenza (con fallback in memoria) ---------- */
+  async function save(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  async function load(k){ try{ return localStorage.getItem(k); }catch(e){} return null; }
+
+  (async ()=>{
+    const t=await load('gobbo:text');   if(t) $('script').value=t;
+    const s=await load('gobbo:prefs');
+    if(s){ try{ const p=JSON.parse(s); speed=p.speed||60; fontSize=p.fs||34;
+      $('speed').value=speed; $('fsize').value=fontSize;
+      $('speedOut').value=speed; $('fsizeOut').value=fontSize; }catch(e){} }
+  })();
+
+  let saveT=null;
+  $('script').addEventListener('input',()=>{ clearTimeout(saveT); saveT=setTimeout(()=>save('gobbo:text',$('script').value),600); });
+  $('clearBtn').onclick=()=>{ $('script').value=''; save('gobbo:text',''); };
+
+  /* ---------- avvio / uscita ---------- */
+  $('startBtn').onclick=()=>{
+    const txt=$('script').value.trim();
+    content.textContent = txt || 'Nessun testo. Torna indietro e incolla il tuo script.';
+    content.style.fontSize=fontSize+'px';
+    setup.style.display='none'; stage.style.display='block';
+    scroller.scrollTop=0; updateProgress();
+    requestWake();
+  };
+  $('exitBtn').onclick=()=>{ stop(); stage.style.display='none'; setup.style.display='flex'; releaseWake(); };
+
+  /* ---------- motore di scorrimento ---------- */
+  function step(ts){
+    if(!playing) return;
+    if(!last) last=ts;
+    const dt=(ts-last)/1000; last=ts;
+    acc += speed*dt;                 // px al secondo
+    if(acc>=1){ const px=Math.floor(acc); acc-=px; scroller.scrollTop+=px; }
+    updateProgress();
+    if(scroller.scrollTop >= scroller.scrollHeight - scroller.clientHeight - 2){ stop(); }
+    else raf=requestAnimationFrame(step);
+  }
+  function play(){ if(playing)return; playing=true; last=0;
+    status.classList.add('live'); statusTxt.textContent='In lettura';
+    $('playBtn').textContent='⏸ Pausa';
+    controls.classList.add('hidden');
+    raf=requestAnimationFrame(step);
+  }
+  function stop(){ playing=false; cancelAnimationFrame(raf);
+    status.classList.remove('live'); statusTxt.textContent='Pausa';
+    $('playBtn').textContent='▶ Avvia';
+  }
+  function toggle(){ playing?stop():play(); }
+
+  $('playBtn').onclick=e=>{ e.stopPropagation(); toggle(); };
+  $('restartBtn').onclick=e=>{ e.stopPropagation(); scroller.scrollTop=0; updateProgress(); };
+  $('mirrorBtn').onclick=e=>{ e.stopPropagation(); stage.classList.toggle('mirror'); e.target.classList.toggle('on'); };
+
+  /* tocco singolo = play/pausa · doppio = controlli */
+  let lastTap=0;
+  scroller.addEventListener('click',()=>{
+    const now=Date.now();
+    if(now-lastTap<320){ controls.classList.toggle('hidden'); stop(); }
+    else toggle();
+    lastTap=now;
+  });
+
+  /* tastiera (desktop) */
+  document.addEventListener('keydown',e=>{
+    if(stage.style.display!=='block') return;
+    if(e.code==='Space'){ e.preventDefault(); toggle(); }
+    if(e.key==='ArrowUp'){ speed=Math.min(200,speed+10); syncSpeed(); }
+    if(e.key==='ArrowDown'){ speed=Math.max(10,speed-10); syncSpeed(); }
+    if(e.key==='Escape'){ $('exitBtn').click(); }
+  });
+
+  /* ---------- slider ---------- */
+  function savePrefs(){ save('gobbo:prefs',JSON.stringify({speed,fs:fontSize})); }
+  function syncSpeed(){ $('speed').value=speed; $('speedOut').value=speed; savePrefs(); }
+  $('speed').addEventListener('input',e=>{ speed=+e.target.value; $('speedOut').value=speed; savePrefs(); });
+  $('fsize').addEventListener('input',e=>{ fontSize=+e.target.value; $('fsizeOut').value=fontSize;
+    content.style.fontSize=fontSize+'px'; savePrefs(); });
+
+  ['pointerdown','click'].forEach(ev=>controls.addEventListener(ev,e=>e.stopPropagation()));
+
+  /* ---------- progresso ---------- */
+  function updateProgress(){
+    const max=scroller.scrollHeight-scroller.clientHeight;
+    progress.style.width=(max>0?(scroller.scrollTop/max)*100:0)+'%';
+  }
+  scroller.addEventListener('scroll',updateProgress,{passive:true});
+
+  /* ---------- schermo sempre acceso ---------- */
+  async function requestWake(){ try{ if('wakeLock' in navigator) wakeLock=await navigator.wakeLock.request('screen'); }catch(e){} }
+  function releaseWake(){ try{ wakeLock&&wakeLock.release(); wakeLock=null; }catch(e){} }
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&stage.style.display==='block') requestWake(); });
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+</script>
+</body>
+</html>
