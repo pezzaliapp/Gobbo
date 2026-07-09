@@ -256,6 +256,12 @@
       saved:"Script salvato ✓", updated:"Script aggiornato ✓",
       deleted:"Script eliminato", undo:"Annulla", restored:"Ripristinato ✓",
       imported:"File importato ✓", importFail:"Impossibile leggere il file.",
+      transWorking:"Traduzione del testo…",
+      transDone:"Testo tradotto in italiano ✓",
+      transFail:"Traduzione non riuscita: il testo resta in originale.",
+      transConsent:"Per tradurre serve un servizio online (MyMemory): il testo verrà inviato a loro.",
+      allow:"Consenti",
+      transRestored:"Testo originale ripristinato ✓",
       demoName:"Demo — benvenuto",
       demo:"Benvenuto in Gobbo, il tuo teleprompter.\n\nTocca lo schermo una volta: il testo parte. Toccalo di nuovo: si ferma. Tutto qui.\n\nI pulsanti + e − sul bordo destro regolano la velocità mentre leggi, senza staccare gli occhi dal testo.\n\nLa linea ambra è il tuo punto di lettura: tienila all'altezza della webcam e lo sguardo resterà in camera.\n\nQuando sei pronto, tocca ⚙, poi Esci, incolla il tuo testo e vai. In bocca al lupo per la tua call."
     },
@@ -273,6 +279,12 @@
       saved:"Script saved ✓", updated:"Script updated ✓",
       deleted:"Script deleted", undo:"Undo", restored:"Restored ✓",
       imported:"File imported ✓", importFail:"Could not read the file.",
+      transWorking:"Translating text…",
+      transDone:"Text translated to English ✓",
+      transFail:"Translation failed: keeping the original text.",
+      transConsent:"Translation needs an online service (MyMemory): the text will be sent to them.",
+      allow:"Allow",
+      transRestored:"Original text restored ✓",
       demoName:"Demo — welcome",
       demo:"Welcome to Gobbo, your teleprompter.\n\nTap the screen once: the text starts. Tap again: it stops. That's it.\n\nThe + and − buttons on the right edge adjust the speed while you read, without taking your eyes off the text.\n\nThe amber line is your reading point: keep it at webcam height and your gaze stays on camera.\n\nWhen you're ready, tap ⚙, then Exit, paste your own text and go. Good luck with your call."
     }
@@ -324,7 +336,80 @@
     statusTxt.textContent=playing?T().reading:T().paused;
     refreshLib();
   }
-  $('langBtn').onclick=()=>{ lang=(lang==='it'?'en':'it'); applyLang(); save('gobbo:lang',lang); };
+  $('langBtn').onclick=()=>{
+    const from=lang;
+    lang=(lang==='it'?'en':'it');
+    applyLang(); save('gobbo:lang',lang);
+    translateScript(from, lang);
+  };
+
+  /* ==================== TRADUZIONE DEL TESTO ==================== */
+  let snap=null; // {srcLang, srcText, dstLang, dstText} per ripristinare l'originale
+  function setText(t){ $('script').value=t; save('gobbo:text',t); }
+
+  async function translateScript(from, to){
+    const txt=$('script').value;
+    if(!txt.trim()) return;
+    // 1) la demo cambia lingua all'istante, senza rete
+    if(txt===I18N[from].demo){ setText(I18N[to].demo); return; }
+    // 2) se stiamo tornando alla lingua di partenza, ripristina l'originale esatto
+    if(snap && snap.dstLang===from && snap.srcLang===to && txt===snap.dstText){
+      setText(snap.srcText);
+      snap={srcLang:snap.dstLang, srcText:snap.dstText, dstLang:snap.srcLang, dstText:snap.srcText};
+      toast(T().transRestored); return;
+    }
+    // 3) traduzione vera
+    toast(T().transWorking);
+    const result=await machineTranslate(txt, from, to);
+    if(result && result.trim()){
+      snap={srcLang:from, srcText:txt, dstLang:to, dstText:result};
+      setText(result); toast(T().transDone);
+    } else if(result!==false){ // false = consenso negato, silenzio
+      toast(T().transFail);
+    }
+  }
+
+  async function machineTranslate(txt, s, t){
+    // Traduttore integrato del browser: il testo resta sul dispositivo
+    if('Translator' in self){
+      try{
+        const tr=await Translator.create({sourceLanguage:s, targetLanguage:t});
+        const out=await tr.translate(txt);
+        if(out && out.trim()) return out;
+      }catch(e){}
+    }
+    // Fallback online, previo consenso (ricordato)
+    if(load('gobbo:onlineTransOk')!=='1'){
+      return await new Promise(res=>{
+        toast(T().transConsent, T().allow, async ()=>{
+          save('gobbo:onlineTransOk','1');
+          res(await myMemory(txt, s, t));
+        });
+        setTimeout(()=>res(false), 5200); // toast scaduto = consenso negato
+      });
+    }
+    return await myMemory(txt, s, t);
+  }
+
+  async function myMemory(txt, s, t){
+    try{
+      const lines=txt.split('\n'), out=[];
+      for(const line of lines){
+        if(!line.trim()){ out.push(line); continue; }
+        const chunks=line.match(/[\s\S]{1,440}(?=\s|$)|[\s\S]{1,440}/g)||[line];
+        const parts=[];
+        for(const c of chunks){
+          const r=await fetch('https://api.mymemory.translated.net/get?q='+
+            encodeURIComponent(c)+'&langpair='+s+'|'+t);
+          const j=await r.json();
+          if(!j.responseData || +j.responseStatus!==200) throw new Error('mymemory');
+          parts.push(j.responseData.translatedText);
+        }
+        out.push(parts.join(' '));
+      }
+      return out.join('\n');
+    }catch(e){ return null; }
+  }
 
   /* ==================== LIBRERIA ==================== */
   function refreshLib(){
@@ -427,7 +512,7 @@
   })();
 
   let saveT=null;
-  $('script').addEventListener('input',()=>{ clearTimeout(saveT); saveT=setTimeout(()=>save('gobbo:text',$('script').value),600); });
+  $('script').addEventListener('input',()=>{ snap=null; clearTimeout(saveT); saveT=setTimeout(()=>save('gobbo:text',$('script').value),600); });
   $('clearBtn').onclick=()=>{ $('script').value=''; save('gobbo:text',''); };
 
   $('startBtn').onclick=()=>{

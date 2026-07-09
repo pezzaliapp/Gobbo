@@ -10,7 +10,8 @@
 - **Libreria script**: salva più testi con nome, con Annulla dopo l'eliminazione
 - **Esporta/importa** file di testo per spostare gli script tra dispositivi
 - **Modalità specchio** per il vetro da teleprompter fisico
-- **Interfaccia bilingue** IT/EN · schermo sempre acceso durante la lettura
+- **IT⇄EN traduce tutto**: interfaccia e testo da leggere. L'originale viene conservato: tornando alla lingua di partenza riappare il tuo testo esatto. Usa il traduttore integrato del browser (il testo resta sul dispositivo); dove manca, chiede il consenso per un servizio online. Rileggi sempre la traduzione prima della call
+- Schermo sempre acceso durante la lettura
 - Al primo avvio trovi uno **script demo**: tocca "Avvia prompter" e guardalo scorrere
 
 ## Uso in videochiamata
